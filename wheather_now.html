@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #eef2f7;
+      --card: #fff;
+      --text: #1a2332;
+      --sub: #7a8a9e;
+      --border: #e0e8f0;
+      --accent: #3b6ef0;
+      --accent2: #e85d04;
+      --shadow: 0 4px 24px rgba(0,0,0,0.07);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      gap: 1.5rem;
+    }
+
+    header {
+      text-align: center;
+    }
+    h1 {
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    h1 em { color: var(--accent); font-style: normal; }
+    .sub {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--sub);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+
+    /* SEARCH */
+    .search-wrap {
+      display: flex;
+      gap: 0.5rem;
+      width: 100%;
+      max-width: 480px;
+    }
+    input[type=text] {
+      flex: 1;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      padding: 0.75rem 1rem;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type=text]:focus { border-color: var(--accent); }
+    button {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.75rem 1.25rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    button:hover { opacity: 0.88; }
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* QUICK CITIES */
+    .quick {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .chip {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      padding: 0.3rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--card);
+      cursor: pointer;
+      color: var(--sub);
+      transition: all 0.2s;
+      letter-spacing: 0.05em;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* WEATHER CARD */
+    .weather-card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      display: none;
+      animation: slideUp 0.4s ease;
+    }
+    .weather-card.show { display: block; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .city-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .country-flag { font-size: 1.8rem; }
+
+    .weather-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 1.5rem 0;
+    }
+    .temp-big {
+      font-size: 4.5rem;
+      font-weight: 300;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+    .temp-big sup { font-size: 1.5rem; vertical-align: super; font-weight: 400; }
+    .weather-icon { font-size: 5rem; line-height: 1; }
+    .weather-desc {
+      text-transform: capitalize;
+      color: var(--sub);
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+    .feels-like {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--sub);
+    }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+
+    .grid4 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+    .stat {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+    }
+    .stat-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--sub);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .stat-val {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-top: 0.2rem;
+    }
+
+    /* FORECAST */
+    .forecast {
+      margin-top: 1.25rem;
+    }
+    .forecast h3 {
+      font-size: 0.7rem;
+      font-family: 'DM Mono', monospace;
+      color: var(--sub);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+    }
+    .forecast-days {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+    }
+    .day-card {
+      flex: 0 0 auto;
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 0.6rem 0.9rem;
+      text-align: center;
+      min-width: 70px;
+    }
+    .day-name { font-size: 0.65rem; color: var(--sub); font-family: 'DM Mono', monospace; }
+    .day-icon { font-size: 1.4rem; margin: 0.3rem 0; }
+    .day-temp { font-size: 0.85rem; font-weight: 600; }
+
+    /* ERROR / LOADING */
+    .message {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--sub);
+      text-align: center;
+      padding: 1rem;
+      display: none;
+    }
+    .message.show { display: block; }
+    .message.error { color: #e85d04; }
+
+    /* API NOTE */
+    .api-note {
+      max-width: 480px;
+      background: #fff8f0;
+      border: 1px solid #ffd8a8;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      color: #7a5a30;
+      line-height: 1.6;
+    }
+    .api-note strong { color: var(--accent2); }
+    .api-note a { color: var(--accent); }
+
+    footer {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--sub);
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Weather<em>Now</em></h1>
+    <p class="sub">API Fetch · Async/Await · JSON · DOM</p>
+  </header>
+
+  <div class="search-wrap">
+    <input type="text" id="city-input" placeholder="Enter city name..." />
+    <button id="search-btn">Search</button>
+  </div>
+
+  <div class="quick">
+    <div class="chip" data-city="New York">🗽 New York</div>
+    <div class="chip" data-city="London">🇬🇧 London</div>
+    <div class="chip" data-city="Tokyo">🗼 Tokyo</div>
+    <div class="chip" data-city="Paris">🗼 Paris</div>
+    <div class="chip" data-city="Sydney">🦘 Sydney</div>
+  </div>
+
+  <div id="loading" class="message">⏳ Fetching weather data...</div>
+  <div id="error" class="message error"></div>
+
+  <div class="weather-card" id="weather-card">
+    <div class="city-name">
+      <span id="w-city">—</span>
+      <span class="country-flag" id="w-flag">🌍</span>
+    </div>
+
+    <div class="weather-main">
+      <div>
+        <div class="temp-big"><span id="w-temp">—</span><sup>°C</sup></div>
+        <div class="weather-desc" id="w-desc">—</div>
+        <div class="feels-like" id="w-feels">—</div>
+      </div>
+      <div class="weather-icon" id="w-icon">🌤</div>
+    </div>
+
+    <hr class="divider"/>
+
+    <div class="grid4">
+      <div class="stat">
+        <div class="stat-label">💧 Humidity</div>
+        <div class="stat-val" id="w-humidity">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">💨 Wind</div>
+        <div class="stat-val" id="w-wind">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">👁 Visibility</div>
+        <div class="stat-val" id="w-vis">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">🌡 Pressure</div>
+        <div class="stat-val" id="w-pressure">—</div>
+      </div>
+    </div>
+
+    <div class="forecast">
+      <h3>5-Day Forecast (simulated)</h3>
+      <div class="forecast-days" id="forecast"></div>
+    </div>
+  </div>
+
+  <div class="api-note">
+    <strong>📌 How to connect a real API:</strong><br/>
+    Replace <code>API_KEY</code> below with your key from
+    <a href="https://openweathermap.org/api" target="_blank">openweathermap.org</a> (free tier).<br/>
+    Currently using <strong>demo/simulated data</strong> to showcase the fetch pattern.
+  </div>
+
+  <footer>fetch() · async/await · JSON · Error Handling · DOM Manipulation</footer>
+
+  <script>
+    const API_KEY = 'YOUR_API_KEY'; // Replace with real key
+    const BASE = 'https://api.openweathermap.org/data/2.5';
+
+    const cityInput = document.getElementById('city-input');
+    const searchBtn = document.getElementById('search-btn');
+    const loadingEl = document.getElementById('loading');
+    const errorEl = document.getElementById('error');
+    const weatherCard = document.getElementById('weather-card');
+
+    const weatherIcons = {
+      'clear sky': '☀️', 'few clouds': '🌤', 'scattered clouds': '⛅',
+      'broken clouds': '🌥', 'overcast clouds': '☁️', 'light rain': '🌦',
+      'moderate rain': '🌧', 'heavy rain': '⛈', 'thunderstorm': '⛈',
+      'snow': '❄️', 'mist': '🌫', 'fog': '🌫', 'drizzle': '🌦',
+    };
+
+    function getIcon(desc) {
+      const key = Object.keys(weatherIcons).find(k => desc.toLowerCase().includes(k));
+      return key ? weatherIcons[key] : '🌡';
+    }
+
+    const countryFlags = {
+      US:'🇺🇸', GB:'🇬🇧', JP:'🇯🇵', FR:'🇫🇷', AU:'🇦🇺',
+      DE:'🇩🇪', BR:'🇧🇷', IN:'🇮🇳', CA:'🇨🇦', IT:'🇮🇹',
+    };
+
+    // Simulated data for demo (mimics OpenWeatherMap response)
+    const mockData = {
+      'new york':  { name:'New York', country:'US', temp:18, feels:16, desc:'few clouds', humidity:62, wind:5.2, visibility:10, pressure:1013 },
+      'london':    { name:'London', country:'GB', temp:12, feels:10, desc:'overcast clouds', humidity:78, wind:4.1, visibility:8, pressure:1008 },
+      'tokyo':     { name:'Tokyo', country:'JP', temp:22, feels:21, desc:'clear sky', humidity:55, wind:3.8, visibility:10, pressure:1018 },
+      'paris':     { name:'Paris', country:'FR', temp:15, feels:13, desc:'light rain', humidity:80, wind:6.0, visibility:7, pressure:1005 },
+      'sydney':    { name:'Sydney', country:'AU', temp:25, feels:24, desc:'clear sky', humidity:50, wind:7.2, visibility:10, pressure:1020 },
+    };
+
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const forecastDescs = ['clear sky','few clouds','light rain','scattered clouds','clear sky'];
+    const forecastTemps = [2, -1, 3, -2, 1];
+
+    function showLoading() {
+      loadingEl.classList.add('show');
+      errorEl.classList.remove('show');
+      weatherCard.classList.remove('show');
+    }
+    function hideLoading() { loadingEl.classList.remove('show'); }
+    function showError(msg) {
+      errorEl.textContent = '❌ ' + msg;
+      errorEl.classList.add('show');
+    }
+
+    function renderWeather(data) {
+      document.getElementById('w-city').textContent = `${data.name}, ${data.country}`;
+      document.getElementById('w-flag').textContent = countryFlags[data.country] || '🌍';
+      document.getElementById('w-temp').textContent = data.temp;
+      document.getElementById('w-desc').textContent = data.desc;
+      document.getElementById('w-feels').textContent = `Feels like ${data.feels}°C`;
+      document.getElementById('w-icon').textContent = getIcon(data.desc);
+      document.getElementById('w-humidity').textContent = data.humidity + '%';
+      document.getElementById('w-wind').textContent = data.wind + ' m/s';
+      document.getElementById('w-vis').textContent = data.visibility + ' km';
+      document.getElementById('w-pressure').textContent = data.pressure + ' hPa';
+
+      // Forecast
+      const fc = document.getElementById('forecast');
+      fc.innerHTML = '';
+      const today = new Date().getDay();
+      forecastDescs.forEach((desc, i) => {
+        const d = document.createElement('div');
+        d.className = 'day-card';
+        const dayIdx = (today + i + 1) % 7;
+        d.innerHTML = `
+          <div class="day-name">${dayNames[dayIdx]}</div>
+          <div class="day-icon">${getIcon(desc)}</div>
+          <div class="day-temp">${data.temp + forecastTemps[i]}°</div>
+        `;
+        fc.appendChild(d);
+      });
+
+      weatherCard.classList.add('show');
+    }
+
+    async function fetchWeather(city) {
+      showLoading();
+      searchBtn.disabled = true;
+
+      try {
+        // --- REAL API CALL (uncomment with your key) ---
+        // const res = await fetch(`${BASE}/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`);
+        // if (!res.ok) throw new Error(res.status === 404 ? 'City not found' : 'API error');
+        // const json = await res.json();
+        // const data = { name: json.name, country: json.sys.country, temp: Math.round(json.main.temp), ... };
+
+        // --- DEMO: simulated fetch with delay ---
+        await new Promise(r => setTimeout(r, 900));
+        const key = city.toLowerCase().trim();
+        const data = mockData[key];
+        if (!data) throw new Error(`City "${city}" not found in demo data. Try: New York, London, Tokyo, Paris, Sydney.`);
+
+        hideLoading();
+        renderWeather(data);
+
+      } catch (err) {
+        hideLoading();
+        showError(err.message);
+      } finally {
+        searchBtn.disabled = false;
+      }
+    }
+
+    searchBtn.addEventListener('click', () => {
+      const city = cityInput.value.trim();
+      if (city) fetchWeather(city);
+    });
+
+    cityInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') searchBtn.click();
+    });
+
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        cityInput.value = chip.dataset.city;
+        fetchWeather(chip.dataset.city);
+      });
+    });
+  </script>
+</body>
+</html>
